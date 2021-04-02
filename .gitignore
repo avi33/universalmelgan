@@ -1,0 +1,6 @@
+logs/
+__pycache__/
+mel2wav/__pycache/
+venv/
+models/*.pt
+.vscode/

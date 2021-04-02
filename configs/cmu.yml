@@ -1,0 +1,49 @@
+fft:
+  n_mel_channels: 80  
+  n_fft: 768
+  hop_length: 192
+  win_length: 768
+  mel_fmin: 40
+  mel_fmax: 7800
+
+data:
+  data_path: ../datasets/ARCTIC/
+  seq_len: 6144
+  sampling_rate: 16000
+
+dataloader:
+  batch_size: 32
+
+optimizer:
+  lrG: 0.001
+  betasG: [0.5, 0.9]
+  lrD: 0.001  
+  betasD: [0.5, 0.9]
+
+logging:
+  save_path: ./logs/cmu-16K-a
+  load_path: 
+  log_interval: 100
+  save_interval: 1000
+  n_test_samples: 10   
+
+train:
+  resume_step: None
+  epochs: 3000
+  Gpath: 
+  mode: GD #G, GD
+    
+Generator:
+    ngf: 64
+    n_residual_layers: 4
+    ratios: [8, 6, 4]
+
+Discriminator:
+    ndf: 16
+    num_D: 3
+    n_layers_D: 4
+    downsamp_factor: 4    
+
+losses:
+    lambda_sc: 10
+    lambda_sm: 10
