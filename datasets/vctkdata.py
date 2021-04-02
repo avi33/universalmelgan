@@ -87,8 +87,3 @@ class VCTK(torch.utils.data.Dataset):
             speakers.append(ff)
         speakers = list(set(speakers))
         return speakers
-
-if __name__ == "__main__":
-    files = Path('/home/avi/Documents/projects/speech/vctk') / "train_files.txt"
-    D = VCTK(files, 6400)
-    next(iter(D))
