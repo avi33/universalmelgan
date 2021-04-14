@@ -118,9 +118,9 @@ class DBlock(nn.Module):
 class FreqDiscriminator(nn.Module):
     def __init__(self):
         super(FreqDiscriminator, self).__init__()
-        windows = [1024, 512, 256]
-        hops = [256, 128, 64]
-        n_ffts = [1024, 512, 256]
+        windows = [1024, 768, 720]
+        hops = [256, 192, 180]
+        n_ffts = [1024, 768, 720]
         self.model = nn.ModuleDict()
         for i, (w, h, n) in enumerate(zip(windows, hops, n_ffts)):
             self.model[f"disc_{i}"] = nn.Sequential(

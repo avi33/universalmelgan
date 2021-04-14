@@ -15,13 +15,13 @@ dataloader:
   batch_size: 32
 
 optimizer:
-  lrG: 0.001
+  lrG: 0.0001
   betasG: [0.5, 0.9]
-  lrD: 0.001  
+  lrD: 0.0001  
   betasD: [0.5, 0.9]
 
 logging:
-  save_path: ./logs/cmu-16K-a
+  save_path: ./logs/cmu-16K
   load_path: 
   log_interval: 100
   save_interval: 1000
@@ -30,8 +30,8 @@ logging:
 train:
   resume_step: None
   epochs: 3000
-  Gpath: 
-  mode: GD #G, GD
+  Gpath:
+  mode: G #G, GD
     
 Generator:
     ngf: 64
