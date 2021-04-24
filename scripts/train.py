@@ -1,4 +1,4 @@
-from datasets.cmudata import CMUDataset as AudioDataset
+from datasets.audiodata import AudioDataset as AudioDataset
 from mel2wav.generator import Generator
 from mel2wav.tfms_discriminator import Discriminator
 from mel2wav.stft import Audio2Mel
@@ -67,14 +67,14 @@ def trainG(args):
     # Create data loaders #
     #######################
     train_set = AudioDataset(
-        Path(args['data']['data_path']) / "train_files.txt", 
+        Path(args['data']['data_path']) / "train_files_inv.txt", 
         segment_length=args['data']['seq_len'], 
         sampling_rate=args['data']['sampling_rate'],
-        augment=['amp', 'flip']
+        augment=['amp', 'flip', 'neg']
     )
 
     test_set = AudioDataset(
-        Path(args['data']['data_path']) / "test_files.txt",
+        Path(args['data']['data_path']) / "test_files_inv.txt",
         segment_length=args['data']['sampling_rate']*4,
         sampling_rate=args['data']['sampling_rate'],
         augment=None        
@@ -88,7 +88,7 @@ def trainG(args):
     ##########################
     test_voc = []
     test_audio = []
-    for i, (x_t, _) in enumerate(test_loader):
+    for i, x_t in enumerate(test_loader):
         x_t = x_t.cuda()
         s_t = fft(x_t).detach()
 
@@ -112,7 +112,7 @@ def trainG(args):
     steps = 0
     mr_stft_loss = MultiResolutionSTFTLoss().cuda()
     for epoch in range(1, args['train']['epochs'] + 1):
-        for iterno, (x_t, _) in enumerate(train_loader):
+        for iterno, x_t in enumerate(train_loader):
             x_t = x_t.cuda()
             s_t = fft(x_t).detach()
             x_pred_t = netG(s_t.cuda())
@@ -198,8 +198,8 @@ def trainGD(args):
                      args['Generator']['n_residual_layers'], 
                      ratios=args['Generator']['ratios']).cuda()
 
-    if 'G_path' in args['Generator'] and args['Generator']['G_path'] is not None:
-        netG.load_state_dict(torch.load(args['Generator']['G_path'] / "netG.pt"))        
+    if 'Gpath' in args['train'] and args['train']['Gpath'] is not None:
+        netG.load_state_dict(torch.load(Path(args['train']['Gpath']) / "best_netG.pt"))        
     netD = Discriminator(
         args['Discriminator']['num_D'], args['Discriminator']['ndf'], args['Discriminator']['n_layers_D'], args['Discriminator']['downsamp_factor']
     ).cuda()
@@ -232,14 +232,14 @@ def trainGD(args):
     # Create data loaders #
     #######################
     train_set = AudioDataset(
-        Path(args['data']['data_path']) / "train_files.txt", 
+        Path(args['data']['data_path']) / "train_files_inv.txt", 
         segment_length=args['data']['seq_len'], 
         sampling_rate=args['data']['sampling_rate'],
-        augment=['amp', 'flip']
+        augment=['amp', 'flip', 'neg']
     )
 
     test_set = AudioDataset(
-        Path(args['data']['data_path']) / "test_files.txt",
+        Path(args['data']['data_path']) / "test_files_inv.txt",
         segment_length=args['data']['sampling_rate']*4,
         sampling_rate=args['data']['sampling_rate'],
         augment=None,
@@ -253,7 +253,7 @@ def trainGD(args):
     ##########################
     test_voc = []
     test_audio = []
-    for i, (x_t, _) in enumerate(test_loader):
+    for i, x_t in enumerate(test_loader):
         x_t = x_t.cuda()
         s_t = fft(x_t).detach()
 
@@ -277,7 +277,7 @@ def trainGD(args):
     steps = 0
     mr_stft_loss = MultiResolutionSTFTLoss().cuda()
     for epoch in range(1, args['train']['epochs'] + 1):
-        for iterno, (x_t, _) in enumerate(train_loader):
+        for iterno, x_t in enumerate(train_loader):
             x_t = x_t.cuda()
             s_t = fft(x_t).detach()
             x_pred_t = netG(s_t.cuda())

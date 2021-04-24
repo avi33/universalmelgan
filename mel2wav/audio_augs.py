@@ -81,15 +81,23 @@ class AudioAugs(object):
         self.random_neg = RandomAdd180Phase(p=0.5)
         self.random_quantnoise = RandomQuantNoise(n_bits=16, p=0.5)
         self.awgn = RandomAddAWGN(snr_db=30, p=0.5)
-        self.sine = RandomAddSine(fs=fs, snr_db=-30, p=0.5)
+        self.sine = RandomAddSine(fs=fs, snr_db=30, p=0.5)
+        self.augs = augs
     
     def __call__(self, sample):
-        sample = self.random_amp(sample)
-        #sample = self.random_flip(sample)
-        sample = self.random_neg(sample)
-        sample = self.random_quantnoise(sample)
-        sample = self.awgn(sample)
-        sample = self.sine(sample)
+        for aug in self.augs:
+            if aug=='amp':
+                sample = self.random_amp(sample)
+            elif aug=='flip':
+                sample = self.random_flip(sample)
+            elif aug=='neg':
+                sample = self.random_neg(sample)
+            elif aug=='quant':
+                sample = self.random_quantnoise(sample)
+            elif aug=='sine':
+                sample = self.sine(sample)
+            elif aug=='awgn':
+                sample = self.awgn(sample)
         return sample
 
 if __name__ == "__main__":

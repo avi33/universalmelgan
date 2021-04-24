@@ -1,47 +1,48 @@
-import os, sys, glob
+import os, glob
 import numpy as np
-import librosa
+import argparse
 
-def copyWavFiles():
-    root = "/home/avig/data/speech/cmu_arctic/"
-    root_target = "/home/avig/data/speech/cmu_arctic_all"
-    files = glob.glob(root + '/**/**/*.wav')
-    print("found {} files".format(len(files)))
-    fs = 22050
-    for i, f in enumerate(files):
-        if i % 50 == 0:
-            print("{}/{}".format(i, len(files)))
-        b = os.path.basename(f)
-        ff = root_target + '/' + b
-        x, _ = librosa.core.load(f, sr=fs)
-        librosa.output.write_wav(ff, x, fs)
-
-def splitTrainVal(root_target, speakers):
-    files = glob.glob(root_target + '/*.wav')
-    files_spks = []
-    for f in files:
-        spk = os.path.basename(f).split('_')[-1][:-4]
-        if spk in speakers:
-            files_spks.append(f)
-    rand_idx = np.random.permutation(len(files_spks))
+def splitTrainVal(root, fnames):
+    rand_idx = np.random.permutation(len(fnames))
     train_idx = rand_idx[:-10]
     val_idx = rand_idx[-10:]
-    with open(root_target + "/train_files.txt", 'w') as f:  
+    with open(root + "/train_files_inv.txt", 'w') as f:  
         for i in range(train_idx.shape[0]): 
-            b = os.path.basename(files_spks[train_idx[i]])+'\n'
+            b = fnames[train_idx[i]]+'\n'
             f.write(b)
-    with open(root_target + "/test_files.txt", 'w') as f:  
+    with open(root + "/test_files_inv.txt", 'w') as f:  
         for i in range(val_idx.shape[0]): 
-            b = os.path.basename(files_spks[val_idx[i]])+'\n'
+            b = fnames[val_idx[i]]+'\n'
             f.write(b)             
     
+def parse_args():
+    parser = argparse.ArgumentParser()      
+    parser.add_argument("--data_path", default='/media/avi/8E56B6E056B6C86B/datasets', type=str)
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
-    #root_target = "/home/avig/data/speech/cmu_arctic"
-    #root_target = "/home/avig/data/speech/cmu_arctic/cmu_us_ahw_arctic/wav"
-    #root_target = "/home/avig/data/speech/DS_10283_2651/VCTK-Corpus/wav22-5/p226"    
-    #copyWavFiles(root_target)
-    speakers = ['aew', 'bdl', 'jmk', 'ahw', 'fem', 'rms']
-    #speakers = ['aew', 'rms']
-    root_target = '/home/avig/data/speech/cmu_arctic_2convert'
-    splitTrainVal(root_target, speakers)
+    args = parse_args()    
+    audio_sets = ['ARCTIC','vcc2018','vctk', 'bibi', 'zamir']    
+    fnames = []
+    for i, audio_set in enumerate(audio_sets):
+        if audio_set.lower() == 'arctic':
+            ff = glob.glob(os.path.join(args.data_path, audio_set) + '/**/wav/*.wav')            
+            fnames += ff
+        elif audio_set.lower() == 'vctk':
+            ff = glob.glob(os.path.join(args.data_path, audio_set, 'clean_trainset_28spk_wav') + '/*.wav')
+            fnames += ff
+        elif audio_set.lower() == 'vcc2018':
+            ff = glob.glob(os.path.join(args.data_path, 'vcc2018') + '/**/**/*.wav')
+            fnames += ff
+        elif audio_set.lower() == 'bibi':
+            ff = glob.glob(os.path.join(args.data_path, audio_set) + '/*.wav')
+            fnames += ff
+        elif audio_set.lower() == 'zamir':
+            ff = glob.glob(os.path.join(args.data_path, audio_set) + '/*.wav')
+            fnames += ff
+        else:
+            raise NotImplemented
+        print("set:{} #files:{}".format(audio_set.lower(), len(ff)))
+    
+    splitTrainVal(args.data_path, fnames)
