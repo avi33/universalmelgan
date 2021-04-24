@@ -17,7 +17,7 @@ def splitTrainVal(root, fnames):
     
 def parse_args():
     parser = argparse.ArgumentParser()      
-    parser.add_argument("--data_path", default='/media/avi/8E56B6E056B6C86B/datasets', type=str)
+    parser.add_argument("--data_path", default=None, type=str)
     args = parser.parse_args()
     return args
 
