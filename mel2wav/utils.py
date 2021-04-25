@@ -13,6 +13,13 @@ def files_to_list(filename):
     files = [f.rstrip() for f in files]
     return files
 
+def padwav4mult(wav):    
+    n_frames = (np.ceil(wav.shape[0] / 256 - 1))
+    nn = 4 - n_frames % 4
+    n_frames_legal = n_frames + nn        
+    pad_sz = int(n_frames_legal * 256 - wav.shape[0])
+    wav_pad = np.hstack((wav, np.zeros(pad_sz)))
+    return wav_pad
 
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
