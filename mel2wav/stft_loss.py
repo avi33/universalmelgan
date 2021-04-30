@@ -111,7 +111,7 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
         #win_lengths=[800, 768, 720],
         fft_sizes=[840, 800, 768, 720, 512, 600],
         hop_sizes=[210, 200, 192, 180, 128, 150],
-        win_lengths=[210, 800, 768, 720, 512, 600],
+        win_lengths=[840, 800, 768, 720, 512, 600],
         window="hann_window",
     ):
         """Initialize Multi resolution STFT loss module.
