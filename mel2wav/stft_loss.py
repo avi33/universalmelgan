@@ -106,6 +106,9 @@ class MultiResolutionSTFTLoss(torch.nn.Module):
 
     def __init__(
         self,
+        #fft_sizes=[800, 768, 720],
+        #hop_sizes=[200, 192, 180],
+        #win_lengths=[800, 768, 720],
         fft_sizes=[1024, 768, 720, 512, 600],
         hop_sizes=[256, 192, 180, 128, 150],
         win_lengths=[1024, 768, 720, 512, 600],
