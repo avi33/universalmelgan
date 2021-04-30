@@ -8,6 +8,18 @@ def weights_init(m):
     if isinstance(m, torch.nn.Conv1d):
         m.weight.data.normal_(0.0, 0.02)    
         m.bias.data.fill_(0)
+    
+    elif isinstance(m, torch.nn.Conv2d):
+        m.weight.data.normal_(0.0, 0.02)    
+        m.bias.data.fill_(0)
+
+    elif isinstance(m, torch.nn.ConvTranspose1d):
+        m.weight.data.normal_(0.0, 0.02)    
+        m.bias.data.fill_(0)
+
+    elif isinstance(m, torch.nn.ConvTranspose2d):
+        m.weight.data.normal_(0.0, 0.02)    
+        m.bias.data.fill_(0)
 
 def WNConv1d(*args, **kwargs):
     return weight_norm(nn.Conv1d(*args, **kwargs))

@@ -202,8 +202,8 @@ def trainGD(args):
         netG.load_state_dict(torch.load(Path(args['train']['Gpath']) / "best_netG.pt"))        
     netD = Discriminator(
         args['Discriminator']['num_D'], args['Discriminator']['ndf'], args['Discriminator']['n_layers_D'], args['Discriminator']['downsamp_factor']
-    ).cuda()
-
+    ).cuda()        
+    
     fft = Audio2Mel(n_mel_channels=args['fft']['n_mel_channels'], 
                     n_fft=args['fft']['n_fft'], 
                     hop_length=args['fft']['hop_length'], 
