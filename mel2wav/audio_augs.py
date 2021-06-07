@@ -25,7 +25,7 @@ class RandomTimeShift(object):
                 else:
                     sample = torch.cat((sample[n_shift:], pad), dim=-1)
         return sample
-                
+
 
 class RandomAmp(object):
     def __init__(self, low, high):
@@ -105,6 +105,7 @@ class AudioAugs(object):
         self.random_quantnoise = RandomQuantNoise(n_bits=16, p=0.5)
         self.awgn = RandomAddAWGN(snr_db=30, p=0.5)
         self.sine = RandomAddSine(fs=fs, snr_db=30, p=0.5)
+        self.tshift = RandomTimeShift(p=0.5, max_time_shift=None)
         self.augs = augs
     
     def __call__(self, sample):
@@ -121,6 +122,8 @@ class AudioAugs(object):
                 sample = self.sine(sample)
             elif aug=='awgn':
                 sample = self.awgn(sample)
+            elif aug == 'tshift':
+                sample = self.tshift(sample)
         return sample
 
 if __name__ == "__main__":
