@@ -10,7 +10,7 @@ class RandomTimeShift(object):
         self.p = p
         self.max_time_shift = max_time_shift
     
-    def forward(self, sample):
+    def __call__(self, sample):
         if torch.rand(1) < self.p:
             if self.max_time_shift is None:
                 self.max_time_shift = sample.shape[-1] // 20
@@ -74,7 +74,7 @@ class RandomAddAWGN(object):
         if torch.rand(1) > self.p:     
             s = torch.sqrt(torch.mean(sample**2))
             sgm = s * 10**(-self.snr_db/20.)
-            w = torch.rand_like(sample) * sgm
+            w = torch.randn_like(sample) * sgm
             sample = sample + w
         return sample
 
