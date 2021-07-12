@@ -33,7 +33,7 @@ class RandomAmp(object):
         self.high = high
     def __call__(self, sample):
         amp = torch.FloatTensor(1).uniform_(self.low, self.high)
-        sample = sample * amp
+        sample.mult_(amp)
         return sample
 
 
@@ -41,9 +41,8 @@ class RandomFlip(object):
     def __init__(self, p=0.5):
         self.p = p
     def __call__(self, sample):
-        if torch.rand(1) > self.p:
-            inv_idx = torch.arange(sample.size(0)-1, -1, -1).long()
-            sample = sample[inv_idx]
+        if torch.rand(1) > self.p:            
+            sample = sample.flip(dims=[-1]).contiguous()            
         return sample
 
 
@@ -52,7 +51,7 @@ class RandomAdd180Phase(object):
         self.p = p
     def __call__(self, sample):
         if torch.rand(1) > self.p:     
-            sample = sample * (-1)
+            sample.mult_(-1)
         return sample
 
 
@@ -75,7 +74,7 @@ class RandomAddAWGN(object):
             s = torch.sqrt(torch.mean(sample**2))
             sgm = s * 10**(-self.snr_db/20.)
             w = torch.randn_like(sample) * sgm
-            sample = sample + w
+            sample.add_(w)
         return sample
 
 
@@ -91,9 +90,9 @@ class RandomAddSine(object):
             f = 50 + 3*torch.randn(1)
             t = n*1./self.fs
             s = torch.sqrt(torch.mean(sample**2))
-            sgm = s * 10**(-self.snr_db/20.)  
-            b = sgm*s*torch.sin(2*np.pi*f*t+torch.rand(1)*np.pi)
-            sample = sample + b           
+            sgm = s * np.sqrt(2) * 10**(-self.snr_db/20.)  
+            b = sgm*torch.sin(2*np.pi*f*t+torch.rand(1)*np.pi)
+            sample.add_(b)
         return sample
 
 
