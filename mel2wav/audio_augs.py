@@ -11,19 +11,52 @@ class RandomTimeShift(object):
         self.max_time_shift = max_time_shift
     
     def __call__(self, sample):
-        if torch.rand(1) < self.p:
+        if random.random() < self.p:
             if self.max_time_shift is None:
                 self.max_time_shift = sample.shape[-1] // 20
-            n_shift = random.randint(0, self.max_time_shift)
+            int_d = 2*random.randint(0, self.max_time_shift)-self.max_time_shift            
+            if int_d == 0:
+                pass
+            else:
+                if int_d > 0:
+                    pad = torch.zeros(int_d, dtype=sample.dtype)
+                    sample = torch.cat((pad, sample[:-int_d]), dim=-1).contiguous()
+                else:
+                    pad = torch.zeros(-int_d, dtype=sample.dtype)
+                    sample = torch.cat((sample[-int_d:], pad), dim=-1).contiguous()
+            
+            frac_d = random.random()-0.5
+            if frac_d == 0:
+                return sample
+            n = sample.shape[-1]
+            dw = 2 * np.pi / n
+
+            if n % 2 == 1:
+                wp = torch.arange(0, np.pi + dw, dw).float()
+                wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, )).float()
+            else:
+                wp = torch.arange(0, np.pi, dw).float()
+                wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, )).float()
+            w = torch.cat((wp, wn), dim=-1).contiguous()
+            phi = frac_d * w
+            sample = (torch.fft.ifft(torch.fft.fft(sample)*torch.exp(-1*j*phi))).real
+        return sample
+
+
+class RandomCycleShift(object):
+    def __init__(self, p, max_time_shift=None):
+        self.p = p
+        self.max_time_shift = max_time_shift
+    
+    def __call__(self, sample):
+        if torch.rand(1) < self.p:
+            if self.max_time_shift is None:
+                self.max_time_shift = sample.shape[-1]
+            n_shift = random.randint(0, self.max_time_shift-1)
             if n_shift == 0:
                 return sample
-            else:
-                pad = torch.zeros(n_shift, dtype=sample.dtype)
-                direcion = random.random()
-                if direcion > 0.5:
-                    sample = torch.cat((pad, sample[:-n_shift]), dim=-1)
-                else:
-                    sample = torch.cat((sample[n_shift:], pad), dim=-1)
+            else:                
+                sample = torch.cat((sample[-n_shift:], sample[:-n_shift]), dim=-1).contiguous()                
         return sample
 
 
@@ -105,6 +138,7 @@ class AudioAugs(object):
         self.awgn = RandomAddAWGN(snr_db=30, p=0.5)
         self.sine = RandomAddSine(fs=fs, snr_db=30, p=0.5)
         self.tshift = RandomTimeShift(p=0.5, max_time_shift=None)
+        self.cshift = RandomCycleShift(p=0.5, max_time_shift=None)
         self.augs = augs
     
     def __call__(self, sample):
@@ -122,6 +156,8 @@ class AudioAugs(object):
             elif aug=='awgn':
                 sample = self.awgn(sample)
             elif aug == 'tshift':
+                sample = self.tshift(sample)
+            elif aug == 'cshift':
                 sample = self.tshift(sample)
         return sample
 
