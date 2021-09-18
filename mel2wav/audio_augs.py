@@ -39,7 +39,7 @@ class RandomTimeShift(object):
                 wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, )).float()
             w = torch.cat((wp, wn), dim=-1).contiguous()
             phi = frac_d * w
-            sample = (torch.fft.ifft(torch.fft.fft(sample)*torch.exp(-1*j*phi))).real
+            sample = (torch.fft.ifft(torch.fft.fft(sample)*torch.exp(-1j*phi))).real
         return sample
 
 
@@ -66,7 +66,7 @@ class RandomAmp(object):
         self.high = high
     def __call__(self, sample):
         amp = torch.FloatTensor(1).uniform_(self.low, self.high)
-        sample.mult_(amp)
+        sample.mul_(amp)
         return sample
 
 
@@ -84,7 +84,7 @@ class RandomAdd180Phase(object):
         self.p = p
     def __call__(self, sample):
         if torch.rand(1) > self.p:     
-            sample.mult_(-1)
+            sample.mul_(-1)
         return sample
 
 
@@ -142,6 +142,7 @@ class AudioAugs(object):
         self.augs = augs
     
     def __call__(self, sample):
+        random.shuffle(self.augs)
         for aug in self.augs:
             if aug=='amp':
                 sample = self.random_amp(sample)
@@ -158,20 +159,24 @@ class AudioAugs(object):
             elif aug == 'tshift':
                 sample = self.tshift(sample)
             elif aug == 'cshift':
-                sample = self.tshift(sample)
+                sample = self.cshift(sample)
         return sample
 
 if __name__ == "__main__":
     RA = RandomAmp(0.3, 1.)
-    RF = RandomFlip(0.5)
-    RN = RandomAdd180Phase(0.5)
-    RQ = RandomQuantNoise(16, 0.5)
-    RAW = RandomAddAWGN(30, 0.5)
-    RS = RandomAddSine(30, 0.5)
-    x = torch.randn(4)
-    y1 = RF(x)
-    y2 = RN(x)
-    y3 = RQ(x)
-    y4 = RA(x)
-    y5 = RS(x)
-    print(x-y4)
+    # RF = RandomFlip(0.5)
+    # RN = RandomAdd180Phase(0.5)
+    # RQ = RandomQuantNoise(16, 0.5)
+    # RAW = RandomAddAWGN(30, 0.5)
+    # RS = RandomAddSine(30, 0.5)
+    # x = torch.randn(4)
+    # y1 = RF(x)
+    # y2 = RN(x)
+    # y3 = RQ(x)
+    # y4 = RA(x)
+    # y5 = RS(x)
+    # print(x-y4)
+    A = AudioAugs(augs=['cshift', 'tshift', 'amp', 'flip', 'neg', 'sine', 'awgn'], fs=16000)
+    x = torch.randn(8192).float()    
+    y = A(x)
+    print(y.shape)
