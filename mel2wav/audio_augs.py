@@ -29,16 +29,16 @@ class RandomTimeShift(object):
             if frac_d == 0:
                 return sample
             n = sample.shape[-1]
-            dw = 2 / n
+            dw = 2. * np.pi / n
 
             if n % 2 == 1:
-                wp = torch.arange(0, 1, dw).float()
-                wn = torch.arange(-dw, -1, -dw).flip(dims=(-1, )).float()
+                wp = torch.arange(0, np.pi, dw)
+                wn = torch.arange(-dw, -np.pi, -dw).flip(dims=(-1, ))
             else:
-                wp = torch.arange(0, 1, dw).float()
-                wn = torch.arange(-dw, -1 - dw, -dw).flip(dims=(-1, )).float()
-            w = torch.cat((wp, wn), dim=-1).contiguous()
-            phi = frac_d * w * np.pi
+                wp = torch.arange(0, np.pi, dw)
+                wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, ))
+            w = torch.cat((wp, wn), dim=-1).contiguous().float()
+            phi = frac_d * w
             sample = (torch.fft.ifft(torch.fft.fft(sample)*torch.exp(-1j*phi))).real
         return sample
 
@@ -130,15 +130,15 @@ class RandomAddSine(object):
 
 
 class AudioAugs(object):
-    def __init__(self, augs, fs):        
+    def __init__(self, augs, fs, p=0.5):        
         self.random_amp = RandomAmp(low=0.3, high=1)
-        self.random_flip = RandomFlip(p=0.5)
-        self.random_neg = RandomAdd180Phase(p=0.5)
-        self.random_quantnoise = RandomQuantNoise(n_bits=16, p=0.5)
-        self.awgn = RandomAddAWGN(snr_db=30, p=0.5)
-        self.sine = RandomAddSine(fs=fs, snr_db=30, p=0.5)
-        self.tshift = RandomTimeShift(p=0.5, max_time_shift=None)
-        self.cshift = RandomCycleShift(p=0.5, max_time_shift=None)
+        self.random_flip = RandomFlip(p=p)
+        self.random_neg = RandomAdd180Phase(p=p)
+        self.random_quantnoise = RandomQuantNoise(n_bits=16, p=p)
+        self.awgn = RandomAddAWGN(snr_db=30, p=p)
+        self.sine = RandomAddSine(fs=fs, snr_db=30, p=p)
+        self.tshift = RandomTimeShift(p=p, max_time_shift=None)
+        self.cshift = RandomCycleShift(p=p, max_time_shift=None)
         self.augs = augs
     
     def __call__(self, sample):
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     # y5 = RS(x)
     # print(x-y4)
     A = AudioAugs(augs=['cshift', 'tshift', 'amp', 'flip', 'neg', 'sine', 'awgn'], fs=16000)
-    A = AudioAugs(['tshift'], fs=16000)
-    x = torch.randn(48001).float()    
+    A = AudioAugs(['tshift'], fs=16000, p=1.)
+    x = torch.randn(61876).float()    
     y = A(x)
     print(y.shape)

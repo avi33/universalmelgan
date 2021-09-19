@@ -36,7 +36,9 @@ class AudioDataset(torch.utils.data.Dataset):
         else:
             audio = F.pad(
                 audio, (0, self.segment_length - audio.size(0)), "constant"
-            ).data            
+            ).data
+        if self.augs is not None:
+            audio = self.augs(audio)            
         return audio.unsqueeze(0)
 
     def __len__(self):
@@ -54,7 +56,5 @@ class AudioDataset(torch.utils.data.Dataset):
         """
         data, sampling_rate = load(full_path, sr=None)        
         data = 0.95 * normalize(data)
-        data = torch.from_numpy(data).float()
-        if self.augs is not None:
-            data = self.augs(data)        
+        data = torch.from_numpy(data).float()        
         return data, sampling_rate
