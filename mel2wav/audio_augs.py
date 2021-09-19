@@ -29,16 +29,16 @@ class RandomTimeShift(object):
             if frac_d == 0:
                 return sample
             n = sample.shape[-1]
-            dw = 2 * np.pi / n
+            dw = 2 / n
 
             if n % 2 == 1:
-                wp = torch.arange(0, np.pi + dw, dw).float()
-                wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, )).float()
+                wp = torch.arange(0, 1, dw).float()
+                wn = torch.arange(-dw, -1, -dw).flip(dims=(-1, )).float()
             else:
-                wp = torch.arange(0, np.pi, dw).float()
-                wn = torch.arange(-dw, -np.pi - dw, -dw).flip(dims=(-1, )).float()
+                wp = torch.arange(0, 1, dw).float()
+                wn = torch.arange(-dw, -1 - dw, -dw).flip(dims=(-1, )).float()
             w = torch.cat((wp, wn), dim=-1).contiguous()
-            phi = frac_d * w
+            phi = frac_d * w * np.pi
             sample = (torch.fft.ifft(torch.fft.fft(sample)*torch.exp(-1j*phi))).real
         return sample
 
@@ -177,6 +177,7 @@ if __name__ == "__main__":
     # y5 = RS(x)
     # print(x-y4)
     A = AudioAugs(augs=['cshift', 'tshift', 'amp', 'flip', 'neg', 'sine', 'awgn'], fs=16000)
-    x = torch.randn(8192).float()    
+    A = AudioAugs(['tshift'], fs=16000)
+    x = torch.randn(48001).float()    
     y = A(x)
     print(y.shape)
