@@ -70,6 +70,22 @@ class RandomAmp(object):
         return sample
 
 
+class RandomAmpSegment(object):
+    def __init__(self, low, high, p=0.5, max_len=None):
+        self.low = low
+        self.high = high
+        self.p = p
+        self.max_len = max_len
+    def __call__(self, sample):
+        if random.random() < self.p:            
+            amp = torch.FloatTensor(1).uniform_(self.low, self.high)
+            if self.max_len is None:
+                self.max_len = sample.shape[-1] // 10
+            idx = random.randint(0, self.max_len-1)
+        sample[idx:idx + self.max_len].mul_(amp)
+        return sample
+
+
 class RandomFlip(object):
     def __init__(self, p=0.5):
         self.p = p
@@ -139,6 +155,7 @@ class AudioAugs(object):
         self.sine = RandomAddSine(fs=fs, snr_db=30, p=p)
         self.tshift = RandomTimeShift(p=p, max_time_shift=None)
         self.cshift = RandomCycleShift(p=p, max_time_shift=None)
+        self.ampsegment = RandomAmpSegment(0.3, 1.2, p=p, max_len=None)
         self.augs = augs
     
     def __call__(self, sample):
@@ -160,6 +177,10 @@ class AudioAugs(object):
                 sample = self.tshift(sample)
             elif aug == 'cshift':
                 sample = self.cshift(sample)
+            elif aug == 'ampsegment':
+                sample = self.ampsegment(sample)
+            else:
+                raise ValueError
         return sample
 
 if __name__ == "__main__":
