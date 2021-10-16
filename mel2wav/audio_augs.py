@@ -3,7 +3,7 @@ import torch.nn as nn
 import torchaudio
 import numpy as np
 import random
-
+from torchvision.transforms import Compose
 
 class RandomTimeShift(object):
     def __init__(self, p, max_time_shift=None):
@@ -61,12 +61,14 @@ class RandomCycleShift(object):
 
 
 class RandomAmp(object):
-    def __init__(self, low, high):
+    def __init__(self, low, high, p=0.5):
         self.low = low
         self.high = high
+        self.p = p
     def __call__(self, sample):
-        amp = torch.FloatTensor(1).uniform_(self.low, self.high)
-        sample.mul_(amp)
+        if torch.rand(1) < self.p:
+            amp = torch.FloatTensor(1).uniform_(self.low, self.high)
+            sample.mul_(amp)
         return sample
 
 
@@ -77,7 +79,7 @@ class RandomAmpSegment(object):
         self.p = p
         self.max_len = max_len
     def __call__(self, sample):
-        if random.random() < self.p:            
+        if torch.rand(1) < self.p:            
             amp = torch.FloatTensor(1).uniform_(self.low, self.high)
             if self.max_len is None:
                 self.max_len = sample.shape[-1] // 10
@@ -90,7 +92,7 @@ class RandomFlip(object):
     def __init__(self, p=0.5):
         self.p = p
     def __call__(self, sample):
-        if torch.rand(1) > self.p:            
+        if torch.rand(1) < self.p:            
             sample = sample.flip(dims=[-1]).contiguous()            
         return sample
 
@@ -99,7 +101,7 @@ class RandomAdd180Phase(object):
     def __init__(self, p):
         self.p = p
     def __call__(self, sample):
-        if torch.rand(1) > self.p:     
+        if torch.rand(1) < self.p:     
             sample.mul_(-1)
         return sample
 
@@ -109,7 +111,7 @@ class RandomQuantNoise(object):
         self.p = p
         self.n_bits = n_bits
     def __call__(self, sample):
-        if torch.rand(1) > self.p:     
+        if torch.rand(1) < self.p:     
             sample = torch.round(sample * 2**self.n_bits) / 2**self.n_bits
         return sample
 
@@ -119,7 +121,7 @@ class RandomAddAWGN(object):
         self.p = p
         self.snr_db = snr_db   
     def __call__(self, sample):
-        if torch.rand(1) > self.p:     
+        if torch.rand(1) < self.p:     
             s = torch.sqrt(torch.mean(sample**2))
             sgm = s * 10**(-self.snr_db/20.)
             w = torch.randn_like(sample) * sgm
@@ -134,7 +136,7 @@ class RandomAddSine(object):
         self.snr_db = snr_db
 
     def __call__(self, sample):
-        if torch.rand(1) > self.p:     
+        if torch.rand(1) < self.p:     
             n = torch.arange(0, sample.shape[0], 1)
             f = 50 + 3*torch.randn(1)
             t = n*1./self.fs
@@ -145,30 +147,42 @@ class RandomAddSine(object):
         return sample
 
 
+class RandomMuLaw(object):
+    def __init__(self, n_bins, p=0.5):
+        self.p = p
+        self.n_bins = n_bins        
+
+    def __call__(self, sample):
+        if torch.rand(1) < self.p:                 
+            sample = torchaudio.functional.mu_law_encoding(sample, quantization_channels=self.n_bins)
+            sample = torchaudio.functional.mu_law_decoding(sample, quantization_channels=self.n_bins)
+        return sample
+
 class AudioAugs(object):
     def __init__(self, augs, fs, p=0.5):        
-        self.random_amp = RandomAmp(low=0.3, high=1)
-        self.random_flip = RandomFlip(p=p)
-        self.random_neg = RandomAdd180Phase(p=p)
-        self.random_quantnoise = RandomQuantNoise(n_bits=16, p=p)
+        self.amp = RandomAmp(low=0.3, high=1)
+        self.flip = RandomFlip(p=p)
+        self.neg = RandomAdd180Phase(p=p)
+        self.quantnoise = RandomQuantNoise(n_bits=16, p=p)
         self.awgn = RandomAddAWGN(snr_db=30, p=p)
         self.sine = RandomAddSine(fs=fs, snr_db=30, p=p)
         self.tshift = RandomTimeShift(p=p, max_time_shift=None)
         self.cshift = RandomCycleShift(p=p, max_time_shift=None)
         self.ampsegment = RandomAmpSegment(0.3, 1.2, p=p, max_len=None)
+        self.mulaw = RandomMuLaw(p=p, n_bins=128)
         self.augs = augs
     
     def __call__(self, sample):
-        random.shuffle(self.augs)
+        random.shuffle(self.augs)        
         for aug in self.augs:
             if aug=='amp':
-                sample = self.random_amp(sample)
+                sample = self.amp(sample)
             elif aug=='flip':
-                sample = self.random_flip(sample)
+                sample = self.flip(sample)
             elif aug=='neg':
-                sample = self.random_neg(sample)
+                sample = self.neg(sample)
             elif aug=='quant':
-                sample = self.random_quantnoise(sample)
+                sample = self.quantnoise(sample)
             elif aug=='sine':
                 sample = self.sine(sample)
             elif aug=='awgn':
@@ -179,8 +193,10 @@ class AudioAugs(object):
                 sample = self.cshift(sample)
             elif aug == 'ampsegment':
                 sample = self.ampsegment(sample)
+            elif aug == 'mulaw':
+                sample = self.mulaw(sample)
             else:
-                raise ValueError
+                raise ValueError            
         return sample
 
 if __name__ == "__main__":
@@ -198,7 +214,7 @@ if __name__ == "__main__":
     # y5 = RS(x)
     # print(x-y4)
     A = AudioAugs(augs=['cshift', 'tshift', 'amp', 'flip', 'neg', 'sine', 'awgn'], fs=16000)
-    A = AudioAugs(['tshift'], fs=16000, p=1.)
+    A = AudioAugs(['mulaw'], fs=16000, p=1.)
     x = torch.randn(61876).float()    
     y = A(x)
     print(y.shape)
