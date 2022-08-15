@@ -1,11 +1,9 @@
 import os
 import torch
 import torchaudio
-torchaudio.set_audio_backend('sox_io')
+# torchaudio.set_audio_backend('sox_io')
 import torch.utils.data
 import torch.nn.functional as F
-from librosa.core import load, resample
-from librosa.util import normalize
 from pathlib import Path
 import numpy as np
 import random
@@ -53,8 +51,8 @@ class AudioDataset(torch.utils.data.Dataset):
     def load_wav_to_torch(self, full_path):
         """
         Loads wavdata into torch array
-        """
-        data, sampling_rate = load(full_path, sr=None)        
-        data = 0.95 * normalize(data)
-        data = torch.from_numpy(data).float()        
-        return data, sampling_rate
+        """        
+        audio, sampling_rate = torchaudio.load(full_path)
+        audio.squeeze_()
+        audio = 0.95 * (audio / audio.__abs__().max()).float()        
+        return audio, sampling_rate
