@@ -19,7 +19,7 @@ from pathlib import Path
 
 def parse_args():
     parser = argparse.ArgumentParser()      
-    parser.add_argument("--cfg", default="configs/cmu.yml", type=Path)
+    parser.add_argument("--cfg", default="configs/16k.yml", type=Path)
     args = parser.parse_args()
     return args
 
@@ -220,6 +220,10 @@ def trainGD(args):
     #####################
     optG = torch.optim.Adam(netG.parameters(), lr=args['optimizer']['lrG'], betas=args['optimizer']['betasG'])
     optD = torch.optim.Adam(netD.parameters(), lr=args['optimizer']['lrD'], betas=args['optimizer']['betasD'])
+    if args['train']['ema'] == True:
+        from mel2wav.ema import ExponentialMovingAverage
+        ema = ExponentialMovingAverage(netG.parameters(), decay=0.995)
+
 
     if load_root and load_root.exists():
         netG.load_state_dict(torch.load(load_root / "netG.pt"))
@@ -235,7 +239,7 @@ def trainGD(args):
         Path(args['data']['data_path']) / "train_files_inv.txt", 
         segment_length=args['data']['seq_len'], 
         sampling_rate=args['data']['sampling_rate'],
-        augment=['amp', 'flip', 'neg']
+        augment=args['data']['augs']
     )
 
     test_set = AudioDataset(
@@ -317,7 +321,9 @@ def trainGD(args):
             netG.zero_grad()
             (loss_G + args['losses']['lambda_sc']*sc + args['losses']['lambda_sm']*sm).backward()            
             optG.step()
-
+            if args['train']['ema']==True:
+                ema.update()
+            
             ######################
             # Update tensorboard #
             ######################

@@ -3,9 +3,8 @@ import torch.nn as nn
 import torchaudio
 import numpy as np
 import random
-from torchvision.transforms import Compose
 
-class RandomTimeShift(object):
+class RandomTimeShift():
     def __init__(self, p, max_time_shift=None):
         self.p = p
         self.max_time_shift = max_time_shift
@@ -43,7 +42,7 @@ class RandomTimeShift(object):
         return sample
 
 
-class RandomCycleShift(object):
+class RandomCycleShift():
     def __init__(self, p, max_time_shift=None):
         self.p = p
         self.max_time_shift = max_time_shift
@@ -60,7 +59,7 @@ class RandomCycleShift(object):
         return sample
 
 
-class RandomAmp(object):
+class RandomAmp():
     def __init__(self, low, high, p=0.5):
         self.low = low
         self.high = high
@@ -72,7 +71,7 @@ class RandomAmp(object):
         return sample
 
 
-class RandomAmpSegment(object):
+class RandomAmpSegment():
     def __init__(self, low, high, p=0.5, max_len=None):
         self.low = low
         self.high = high
@@ -88,7 +87,7 @@ class RandomAmpSegment(object):
         return sample
 
 
-class RandomFlip(object):
+class RandomFlip():
     def __init__(self, p=0.5):
         self.p = p
     def __call__(self, sample):
@@ -97,7 +96,7 @@ class RandomFlip(object):
         return sample
 
 
-class RandomAdd180Phase(object):
+class RandomAdd180Phase():
     def __init__(self, p):
         self.p = p
     def __call__(self, sample):
@@ -106,7 +105,7 @@ class RandomAdd180Phase(object):
         return sample
 
 
-class RandomQuantNoise(object):
+class RandomQuantNoise():
     def __init__(self, n_bits=16, p=0.5):
         self.p = p
         self.n_bits = n_bits
@@ -116,7 +115,7 @@ class RandomQuantNoise(object):
         return sample
 
 
-class RandomAddAWGN(object):
+class RandomAddAWGN():
     def __init__(self, snr_db=30, p=0.5):
         self.p = p
         self.snr_db = snr_db   
@@ -129,7 +128,7 @@ class RandomAddAWGN(object):
         return sample
 
 
-class RandomAddSine(object):
+class RandomAddSine():
     def __init__(self, fs, snr_db=30, p=0.5):
         self.p = p
         self.fs = fs
@@ -147,7 +146,7 @@ class RandomAddSine(object):
         return sample
 
 
-class RandomMuLaw(object):
+class RandomMuLaw():
     def __init__(self, n_bins, p=0.5):
         self.p = p
         self.n_bins = n_bins        
@@ -158,7 +157,7 @@ class RandomMuLaw(object):
             sample = torchaudio.functional.mu_law_decoding(sample, quantization_channels=self.n_bins)
         return sample
 
-class AudioAugs(object):
+class AudioAugs():
     def __init__(self, augs, fs, p=0.5):        
         self.amp = RandomAmp(low=0.3, high=1)
         self.flip = RandomFlip(p=p)
